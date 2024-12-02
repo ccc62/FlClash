@@ -14,7 +14,6 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-
 def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
 if (flutterVersionCode == null) {
     flutterVersionCode = '1'
@@ -29,7 +28,7 @@ def defStoreFile = file("keystore.jks")
 def defStorePassword = localProperties.getProperty('storePassword')
 def defKeyAlias = localProperties.getProperty('keyAlias')
 def defKeyPassword = localProperties.getProperty('keyPassword')
-def isRelease = defStoreFile.exists() && defStorePassword != null && defKeyAlias != null && defKeyPassword != null
+def isRelease = false // 强制禁用签名功能
 
 android {
     namespace "com.follow.clash"
@@ -48,6 +47,7 @@ android {
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
+
     signingConfigs {
         if (isRelease) {
             release {
@@ -58,7 +58,6 @@ android {
             }
         }
     }
-
 
     defaultConfig {
         applicationId "com.follow.clash"
@@ -74,11 +73,7 @@ android {
             applicationIdSuffix '.debug'
         }
         release {
-            if (isRelease) {
-                signingConfig signingConfigs.release
-            } else {
-                signingConfig signingConfigs.debug
-            }
+            signingConfig null // 禁用签名
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
@@ -106,9 +101,7 @@ dependencies {
     }
 }
 
-
 afterEvaluate {
     assembleDebug.dependsOn copyNativeLibs
-
     assembleRelease.dependsOn copyNativeLibs
 }
