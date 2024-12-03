@@ -12,23 +12,20 @@ jobs:
     timeout-minutes: 30 # 设置超时时间
     strategy:
       matrix:
-        platform: [android, linux] # 依然支持 Android 和 Linux 平台
+        platform: [android, linux]
 
     steps:
-      # 检出代码
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 配置 Flutter SDK
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x' # 固定 Flutter 版本
+          flutter-version: '3.x'
           channel: 'stable'
 
-      # 缓存 pub 依赖，减少构建时间
       - name: Cache pub dependencies
         uses: actions/cache@v3
         with:
@@ -37,13 +34,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-flutter-pub-
 
-      # 安装和升级依赖
       - name: Upgrade Dependencies
         run: |
           flutter pub outdated
           flutter pub upgrade --major-versions
 
-      # 安装 Linux 特定依赖项
       - name: Install Linux Dependencies
         if: ${{ matrix.platform == 'linux' }}
         run: |
@@ -55,7 +50,6 @@ jobs:
             cmake \
             ninja-build
 
-      # 下载缺失文件，仅限 Linux 构建
       - name: Download Missing Library
         if: ${{ matrix.platform == 'linux' }}
         run: |
@@ -63,7 +57,6 @@ jobs:
           curl -L -o libclash/linux/clash https://example.com/path/to/clash-binary
           chmod +x libclash/linux/clash
 
-      # 配置 Java 环境，用于 Android 构建
       - name: Set up Java 17
         if: ${{ matrix.platform == 'android' }}
         uses: actions/setup-java@v3
@@ -71,23 +64,18 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # 构建 Android 应用
       - name: Build Android
         if: ${{ matrix.platform == 'android' }}
-        env:
-          JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
         run: |
           flutter clean
           flutter build apk --release
 
-      # 构建 Linux 应用
       - name: Build Linux
         if: ${{ matrix.platform == 'linux' }}
         run: |
           flutter clean
           flutter build linux
 
-      # 验证构建结果
       - name: Verify Build Output
         run: |
           if [ "${{ matrix.platform }}" == "android" ]; then
@@ -95,7 +83,6 @@ jobs:
           elif [ "${{ matrix.platform }}" == "linux" ]; then
             ls -lah build/linux/
 
-      # 上传构建产物
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
