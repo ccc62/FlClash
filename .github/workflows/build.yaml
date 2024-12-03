@@ -1,4 +1,4 @@
-name: build
+name: Build Project
 
 on:
   push:
@@ -64,16 +64,32 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Check Flutter Version
+        run: flutter --version
+
       - name: Build
         run: |
+          case "${{ matrix.platform }}" in
+            android)
+              flutter build apk
+              ;;
+            linux)
+              flutter build linux
+              ;;
+          esac
+
+      - name: Verify Build Output
+        run: |
           if [ "${{ matrix.platform }}" == "android" ]; then
-            flutter build apk
+            ls build/app/outputs/flutter-apk/
           elif [ "${{ matrix.platform }}" == "linux" ]; then
-            flutter build linux
+            ls build/linux/
           fi
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.platform }}
-          path: build/
+          path: |
+            build/app/outputs/flutter-apk/*.apk
+            build/linux/*
