@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # 增加超时时间
     strategy:
       matrix:
         platform: [android, linux]
@@ -68,7 +69,6 @@ jobs:
             ls -lah build/app/outputs/flutter-apk/
           elif [ "${{ matrix.platform }}" == "linux" ]; then
             ls -lah build/linux/
-          fi
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
