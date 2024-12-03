@@ -28,21 +28,20 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Install Required Tools
-        if: ${{ matrix.platform == 'linux' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build clang
+      - name: Check Flutter Version
+        run: flutter --version
 
       - name: Build Android
         if: ${{ matrix.platform == 'android' }}
         run: |
           flutter clean
-          flutter build apk --release --no-sound-null-safety
+          flutter build apk --release
 
       - name: Build Linux
         if: ${{ matrix.platform == 'linux' }}
         run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang
           flutter clean
           flutter build linux
 
