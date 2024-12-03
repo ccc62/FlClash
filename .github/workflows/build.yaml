@@ -23,7 +23,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          flutter-version: '3.x' # 固定 Flutter 版本
           channel: 'stable'
 
       - name: Cache pub dependencies
@@ -42,21 +42,18 @@ jobs:
       - name: Set up Android SDK
         if: ${{ matrix.platform == 'android' }}
         run: |
-          mkdir -p $ANDROID_HOME/cmdline-tools
+          mkdir -p /usr/local/lib/android/sdk/cmdline-tools
           curl -o commandlinetools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip commandlinetools.zip -d $ANDROID_HOME/cmdline-tools
-          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          unzip -q commandlinetools.zip -d /usr/local/lib/android/sdk/cmdline-tools
+          mv /usr/local/lib/android/sdk/cmdline-tools/cmdline-tools /usr/local/lib/android/sdk/cmdline-tools/latest
           rm commandlinetools.zip
-
-      - name: Set up Environment Variables
-        if: ${{ matrix.platform == 'android' }}
-        run: |
-          echo "export ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
-          echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
 
       - name: Install Android SDK Tools
         if: ${{ matrix.platform == 'android' }}
         run: |
+          source $GITHUB_ENV
           sdkmanager --update
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
