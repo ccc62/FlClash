@@ -4,46 +4,10 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch: # 支持手动触发
+  workflow_dispatch:  # 手动触发
 
 jobs:
-  changelog:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Generate Changelog
-        run: |
-          tags=($(git tag --merged $(git rev-parse HEAD) --sort=-creatordate))
-          currentTag=${tags[0]}
-          preTag=${tags[1]:-""}
-          echo "## $currentTag" > NEW_CHANGELOG.md
-          if [ -n "$preTag" ]; then
-            git log --pretty=format:"- %s" "$preTag..$currentTag" >> NEW_CHANGELOG.md
-          else
-            git log --pretty=format:"- %s" "$currentTag" >> NEW_CHANGELOG.md
-          fi
-          echo "" >> NEW_CHANGELOG.md
-          cat CHANGELOG.md >> NEW_CHANGELOG.md
-          mv NEW_CHANGELOG.md CHANGELOG.md
-
-      - name: Commit Changelog
-        run: |
-          git config --local user.email "your_email@example.com"
-          git config --local user.name "your_username"
-          git add CHANGELOG.md
-          if ! git diff --cached --quiet; then
-            git commit -m "Update changelog"
-            git push
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   build:
-    needs: [changelog]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -53,7 +17,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          fetch-depth: 0
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -64,29 +28,36 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Check Flutter Version
-        run: flutter --version
-
-      - name: Build Android or Linux
+      - name: Install Required Tools
+        if: ${{ matrix.platform == 'linux' }}
         run: |
-          if [ "${{ matrix.platform }}" == "android" ]; then
-            flutter build apk
-          elif [ "${{ matrix.platform }}" == "linux" ]; then
-            flutter build linux
-          fi
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang
+
+      - name: Build Android
+        if: ${{ matrix.platform == 'android' }}
+        run: |
+          flutter clean
+          flutter build apk --release --no-sound-null-safety
+
+      - name: Build Linux
+        if: ${{ matrix.platform == 'linux' }}
+        run: |
+          flutter clean
+          flutter build linux
 
       - name: Verify Build Output
         run: |
           if [ "${{ matrix.platform }}" == "android" ]; then
-            ls build/app/outputs/flutter-apk/
+            ls -lah build/app/outputs/flutter-apk/
           elif [ "${{ matrix.platform }}" == "linux" ]; then
-            ls build/linux/
+            ls -lah build/linux/
           fi
 
-      - name: Upload Artifact
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.platform }}
+          name: ${{ matrix.platform }}-build
           path: |
             build/app/outputs/flutter-apk/*.apk
             build/linux/*
