@@ -67,16 +67,13 @@ jobs:
       - name: Check Flutter Version
         run: flutter --version
 
-      - name: Build
+      - name: Build Android or Linux
         run: |
-          case "${{ matrix.platform }}" in
-            android)
-              flutter build apk
-              ;;
-            linux)
-              flutter build linux
-              ;;
-          esac
+          if [ "${{ matrix.platform }}" == "android" ]; then
+            flutter build apk
+          elif [ "${{ matrix.platform }}" == "linux" ]; then
+            flutter build linux
+          fi
 
       - name: Verify Build Output
         run: |
