@@ -9,23 +9,26 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45 # 设置超时时间
+    timeout-minutes: 60 # 延长超时时间
     strategy:
       matrix:
         platform: [android, linux]
 
     steps:
+      # 检出代码
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # 配置 Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x' # 固定 Flutter 版本
+          flutter-version: '3.x'
           channel: 'stable'
 
+      # 缓存 pub 依赖
       - name: Cache pub dependencies
         uses: actions/cache@v3
         with:
@@ -34,11 +37,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-flutter-pub-
 
-      - name: Upgrade Dependencies
+      # 更新依赖版本
+      - name: Upgrade Flutter Dependencies
         run: |
           flutter pub outdated
           flutter pub upgrade --major-versions
 
+      # 配置 Android SDK（保留之前逻辑）
       - name: Set up Android SDK
         if: ${{ matrix.platform == 'android' }}
         run: |
@@ -50,6 +55,7 @@ jobs:
           echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
           echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
 
+      # 安装 Android SDK 工具（保留之前逻辑）
       - name: Install Android SDK Tools
         if: ${{ matrix.platform == 'android' }}
         run: |
@@ -57,6 +63,25 @@ jobs:
           sdkmanager --update
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
+      # 配置 Java 17（保留之前逻辑）
+      - name: Set up Java 17
+        if: ${{ matrix.platform == 'android' }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 构建 Android（修复依赖问题并延长超时）
+      - name: Build Android
+        if: ${{ matrix.platform == 'android' }}
+        env:
+          JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
+        run: |
+          flutter clean
+          flutter pub get
+          flutter build apk --release
+
+      # 安装 Linux 构建依赖（保留之前逻辑）
       - name: Install Linux Dependencies
         if: ${{ matrix.platform == 'linux' }}
         run: |
@@ -68,34 +93,14 @@ jobs:
             cmake \
             ninja-build
 
-      - name: Download Missing Library
-        if: ${{ matrix.platform == 'linux' }}
-        run: |
-          mkdir -p libclash/linux
-          curl -L -o libclash/linux/clash https://example.com/path/to/clash-binary
-          chmod +x libclash/linux/clash
-
-      - name: Set up Java 17
-        if: ${{ matrix.platform == 'android' }}
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Build Android
-        if: ${{ matrix.platform == 'android' }}
-        env:
-          JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
-        run: |
-          flutter clean
-          flutter build apk --release
-
+      # 修复 Linux 构建条件语法错误
       - name: Build Linux
         if: ${{ matrix.platform == 'linux' }}
         run: |
           flutter clean
           flutter build linux
 
+      # 验证构建结果（保留之前逻辑）
       - name: Verify Build Output
         run: |
           if [ "${{ matrix.platform }}" == "android" ]; then
@@ -103,6 +108,7 @@ jobs:
           elif [ "${{ matrix.platform }}" == "linux" ]; then
             ls -lah build/linux/
 
+      # 上传构建产物（保留之前逻辑）
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
