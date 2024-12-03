@@ -32,7 +32,12 @@ jobs:
         if: ${{ matrix.platform == 'linux' }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libkeybinder-3.0-dev cmake ninja-build
+          sudo apt-get install -y \
+            libayatana-appindicator3-dev \
+            libkeybinder-3.0-dev \
+            libgtk-3-dev \
+            cmake \
+            ninja-build
 
       - name: Build Android
         if: ${{ matrix.platform == 'android' }}
@@ -44,6 +49,7 @@ jobs:
         if: ${{ matrix.platform == 'linux' }}
         run: |
           flutter clean
+          flutter pub upgrade
           flutter build linux
 
       - name: Verify Build Output
