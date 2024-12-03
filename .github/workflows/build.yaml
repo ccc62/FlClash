@@ -41,15 +41,17 @@ jobs:
             cmake \
             ninja-build
 
-      - name: Download Missing Library
-        if: ${{ matrix.platform == 'linux' }}
-        run: |
-          mkdir -p libclash/linux
-          curl -L -o libclash/linux/clash https://example.com/path/to/clash-binary
-          chmod +x libclash/linux/clash
+      - name: Set up Java 17
+        if: ${{ matrix.platform == 'android' }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Build Android
         if: ${{ matrix.platform == 'android' }}
+        env:
+          JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
         run: |
           flutter clean
           flutter build apk --release
