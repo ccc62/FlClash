@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30 # 设置超时时间
+    timeout-minutes: 45 # 设置超时时间
     strategy:
       matrix:
         platform: [android, linux]
@@ -23,7 +23,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          flutter-version: '3.x' # 固定 Flutter 版本
           channel: 'stable'
 
       - name: Cache pub dependencies
@@ -38,6 +38,12 @@ jobs:
         run: |
           flutter pub outdated
           flutter pub upgrade --major-versions
+
+      - name: Install Android SDK Tools
+        if: ${{ matrix.platform == 'android' }}
+        run: |
+          sdkmanager --update
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
       - name: Install Linux Dependencies
         if: ${{ matrix.platform == 'linux' }}
@@ -66,6 +72,8 @@ jobs:
 
       - name: Build Android
         if: ${{ matrix.platform == 'android' }}
+        env:
+          JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
         run: |
           flutter clean
           flutter build apk --release
